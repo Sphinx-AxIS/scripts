@@ -190,4 +190,4 @@ You should strongly consider resetting when:
 
 ## 🧾 License
 
-MIT (or whatever you choose)
+Free Game
