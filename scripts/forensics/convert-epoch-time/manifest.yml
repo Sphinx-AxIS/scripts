@@ -6,43 +6,40 @@
 # --- Identity --------------------------------------------------------------
 
 # Short identifier — must match the script folder name (kebab-case).
-name: export-processes-by-host
+name: convert-epoch-time
 
 # Human-readable title for catalog display.
-display_name: Export Processes by Host
+display_name: Convert Epoch Time to UTC
 
 # One- to three-sentence description. Pulled into CATALOG.md.
 summary: >
-  Orchestrates a full Carbon Black data collection workflow. Retrieves
-  process data from the Carbon Black API for a given hostname and time
-  range, converts the raw JSON to structured CSV, and produces an Excel
-  (XLSX) report for analyst review.
+  Reads epoch-millisecond timestamps from a text file and writes a CSV
+  mapping each value to its UTC ISO-8601 representation. Useful for quickly
+  normalizing log timestamps during forensic review.
 
 # --- Classification --------------------------------------------------------
 
 # Top-level folder under scripts/.
-category: carbon-black
+category: forensics
 
 language: PowerShell
 
 # Production = stable, in active use.
 # Beta       = functional but rough edges; review before production use.
 # WIP        = under development; expect breakage.
-status: Production
+status: WIP
 
 # --- Files in this folder --------------------------------------------------
 
 # The script you invoke directly. For dot-sourced function files, name the
 # file even though it is not "run" in the conventional sense.
-entry_point: Run-FullCBWorkflow.ps1
+entry_point: ConvertEpoch-toHuman.ps1
 
 # Optional — list supporting scripts and what each one does. Omit for
 # single-file scripts.
-components:
-  - name: ConvertJSON-ToCSV.ps1
-    description: Parses Carbon Black JSON event/process data and converts it into structured CSV format for analysis.
-  - name: Convert-ToXlsx.ps1
-    description: Converts CSV output into Excel (XLSX) format for analyst consumption and reporting.
+# components:
+#   - name: <Helper-One.ps1>
+#     description: <What this supporting script does.>
 
 # Optional — non-script support files (config, lookup tables, etc.).
 # support_files:
@@ -52,40 +49,30 @@ components:
 # --- Runtime profile -------------------------------------------------------
 
 requirements:
-  os: Windows
-  powershell: ">=7.0"
-  software:
-    - Microsoft Excel  # required for XLSX output
-  network:
-    - Carbon Black API endpoint
-  credentials:
-    - Carbon Black API key
+  os: Cross-platform
+  powershell: ">=5.1"
+  permissions:
+    - Read access to the input file
+    - Write access to the output directory
 
 # --- Data flow -------------------------------------------------------------
 
 # Inputs the script consumes (parameters, files, API responses).
 inputs:
-  - carbon black api key
-  - hostname to investigate
-  - date/time for first process to export
-  - date/time for last process to export
+  - epochs.txt  # one epoch-millisecond integer per line; loaded from the current working directory
 
 # Outputs the script produces (files, console output, return objects).
 outputs:
-  - CSV
-  - XLSX
-  - JSON
+  - converted.csv  # two columns: EpochMS, UTC (ISO-8601 with offset); written to the current working directory
 
 # --- Cross-reference -------------------------------------------------------
 
 # Free-form tags used by CAPABILITY_MATRIX.md. Prefer kebab-case. Reuse
 # existing tags where they fit; add new ones sparingly.
 tags:
-  - carbon-black
-  - edr
-  - triage
-  - data-processing
-  - reporting
+  - forensics
+  - time
+  - snippet
   - powershell
 
 # --- Optional metadata -----------------------------------------------------
@@ -95,5 +82,9 @@ tags:
 # updated: <YYYY-MM-DD>
 # related:
 #   - <other-script-name>     # e.g. companion or downstream tool
-# notes: >
-#   <Caveats, known limitations, planned improvements, links to issues, etc.>
+notes: >
+  WIP / snippet. Input and output paths are hardcoded relative to the current
+  working directory (.\epochs.txt and .\converted.csv) and there are no
+  parameters. To productionize this script: convert it to take -InputPath
+  and -OutputPath, validate inputs, and add error handling for non-numeric
+  lines. There is no per-folder README yet.

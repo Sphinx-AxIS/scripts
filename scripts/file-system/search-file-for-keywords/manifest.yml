@@ -6,43 +6,42 @@
 # --- Identity --------------------------------------------------------------
 
 # Short identifier — must match the script folder name (kebab-case).
-name: export-processes-by-host
+name: search-file-for-keywords
 
 # Human-readable title for catalog display.
-display_name: Export Processes by Host
+display_name: Search File for Keywords
 
 # One- to three-sentence description. Pulled into CATALOG.md.
 summary: >
-  Orchestrates a full Carbon Black data collection workflow. Retrieves
-  process data from the Carbon Black API for a given hostname and time
-  range, converts the raw JSON to structured CSV, and produces an Excel
-  (XLSX) report for analyst review.
+  Searches a single file for a user-supplied keyword list and writes each
+  match to an output text file with line (or paragraph) numbers and the full
+  surrounding line of context. Supports .txt, .log, .csv, .doc, and .docx
+  inputs. Useful for document triage, keyword sweeps, and basic evidence
+  screening.
 
 # --- Classification --------------------------------------------------------
 
 # Top-level folder under scripts/.
-category: carbon-black
+category: file-system
 
 language: PowerShell
 
 # Production = stable, in active use.
 # Beta       = functional but rough edges; review before production use.
 # WIP        = under development; expect breakage.
-status: Production
+status: Beta
 
 # --- Files in this folder --------------------------------------------------
 
 # The script you invoke directly. For dot-sourced function files, name the
 # file even though it is not "run" in the conventional sense.
-entry_point: Run-FullCBWorkflow.ps1
+entry_point: Search-Keywords.ps1
 
 # Optional — list supporting scripts and what each one does. Omit for
 # single-file scripts.
-components:
-  - name: ConvertJSON-ToCSV.ps1
-    description: Parses Carbon Black JSON event/process data and converts it into structured CSV format for analysis.
-  - name: Convert-ToXlsx.ps1
-    description: Converts CSV output into Excel (XLSX) format for analyst consumption and reporting.
+# components:
+#   - name: <Helper-One.ps1>
+#     description: <What this supporting script does.>
 
 # Optional — non-script support files (config, lookup tables, etc.).
 # support_files:
@@ -53,39 +52,37 @@ components:
 
 requirements:
   os: Windows
-  powershell: ">=7.0"
+  powershell: ">=5.1"
   software:
-    - Microsoft Excel  # required for XLSX output
-  network:
-    - Carbon Black API endpoint
-  credentials:
-    - Carbon Black API key
+    - Microsoft Word  # required for .doc and .docx; not needed for .txt/.log/.csv
+  permissions:
+    - Read access to the input file and keyword file
+    - Write access to the output path
 
 # --- Data flow -------------------------------------------------------------
 
 # Inputs the script consumes (parameters, files, API responses).
 inputs:
-  - carbon black api key
-  - hostname to investigate
-  - date/time for first process to export
-  - date/time for last process to export
+  - -InputPath     # file to search (.txt, .log, .csv, .doc, .docx)
+  - -KeywordsPath  # text file with one keyword per line; blanks and duplicates ignored
+  - -OutputPath    # destination for results (overwritten if it exists)
 
 # Outputs the script produces (files, console output, return objects).
 outputs:
-  - CSV
-  - XLSX
-  - JSON
+  - Text file at -OutputPath, one line per match in the form 'Keyword: <word> | Line: <#> | Context: <line>'
+  - 'No matches found.' written to the output file when there are no hits
+  - Console status on completion ('Done. Wrote <N> match(es) to: <path>')
 
 # --- Cross-reference -------------------------------------------------------
 
 # Free-form tags used by CAPABILITY_MATRIX.md. Prefer kebab-case. Reuse
 # existing tags where they fit; add new ones sparingly.
 tags:
-  - carbon-black
-  - edr
+  - file-system
+  - forensics
   - triage
-  - data-processing
-  - reporting
+  - keyword-search
+  - office
   - powershell
 
 # --- Optional metadata -----------------------------------------------------
@@ -95,5 +92,10 @@ tags:
 # updated: <YYYY-MM-DD>
 # related:
 #   - <other-script-name>     # e.g. companion or downstream tool
-# notes: >
-#   <Caveats, known limitations, planned improvements, links to issues, etc.>
+notes: >
+  Matching is case-insensitive and whole-word; partial-word matches are not
+  produced. For .doc and .docx inputs the 'Line' value is the Word paragraph
+  number, not the visual line number shown in Word, because Word documents
+  do not store text in fixed lines. The script processes one file per run —
+  recursion across a folder requires a wrapper loop. Does not support PDF,
+  RTF, HTML, XLSX, PST, EML, or images, and does not perform OCR.

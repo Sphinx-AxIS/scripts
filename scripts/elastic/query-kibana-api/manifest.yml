@@ -6,43 +6,41 @@
 # --- Identity --------------------------------------------------------------
 
 # Short identifier — must match the script folder name (kebab-case).
-name: export-processes-by-host
+name: query-kibana-api
 
 # Human-readable title for catalog display.
-display_name: Export Processes by Host
+display_name: Query Kibana API
 
 # One- to three-sentence description. Pulled into CATALOG.md.
 summary: >
-  Orchestrates a full Carbon Black data collection workflow. Retrieves
-  process data from the Carbon Black API for a given hostname and time
-  range, converts the raw JSON to structured CSV, and produces an Excel
-  (XLSX) report for analyst review.
+  Starter template for invoking a Kibana API endpoint with HTTP Basic
+  Authentication. Encodes credentials, builds JSON request headers and
+  body, sends a POST, and prints the response. Designed to be edited
+  inline for a specific endpoint and payload.
 
 # --- Classification --------------------------------------------------------
 
 # Top-level folder under scripts/.
-category: carbon-black
+category: elastic
 
 language: PowerShell
 
 # Production = stable, in active use.
 # Beta       = functional but rough edges; review before production use.
 # WIP        = under development; expect breakage.
-status: Production
+status: WIP
 
 # --- Files in this folder --------------------------------------------------
 
 # The script you invoke directly. For dot-sourced function files, name the
 # file even though it is not "run" in the conventional sense.
-entry_point: Run-FullCBWorkflow.ps1
+entry_point: Kibana_API.ps1
 
 # Optional — list supporting scripts and what each one does. Omit for
 # single-file scripts.
-components:
-  - name: ConvertJSON-ToCSV.ps1
-    description: Parses Carbon Black JSON event/process data and converts it into structured CSV format for analysis.
-  - name: Convert-ToXlsx.ps1
-    description: Converts CSV output into Excel (XLSX) format for analyst consumption and reporting.
+# components:
+#   - name: <Helper-One.ps1>
+#     description: <What this supporting script does.>
 
 # Optional — non-script support files (config, lookup tables, etc.).
 # support_files:
@@ -52,40 +50,37 @@ components:
 # --- Runtime profile -------------------------------------------------------
 
 requirements:
-  os: Windows
-  powershell: ">=7.0"
-  software:
-    - Microsoft Excel  # required for XLSX output
+  os: Cross-platform
+  powershell: ">=5.1"
   network:
-    - Carbon Black API endpoint
+    - Kibana host
   credentials:
-    - Carbon Black API key
+    - Kibana username and password (with permission for the target endpoint)
 
 # --- Data flow -------------------------------------------------------------
 
 # Inputs the script consumes (parameters, files, API responses).
 inputs:
-  - carbon black api key
-  - hostname to investigate
-  - date/time for first process to export
-  - date/time for last process to export
+  - $KibanaUrl    # full URL to the target Kibana endpoint; edited inline at the top of the script
+  - $Username     # Kibana account username; edited inline
+  - $Password     # Kibana account password; edited inline
+  - $RequestBody  # JSON body sent with the POST; edited inline (defaults to a match_all query)
 
 # Outputs the script produces (files, console output, return objects).
 outputs:
-  - CSV
-  - XLSX
-  - JSON
+  - Parsed response object printed to the console on success
+  - Error message printed to the console on failure
 
 # --- Cross-reference -------------------------------------------------------
 
 # Free-form tags used by CAPABILITY_MATRIX.md. Prefer kebab-case. Reuse
 # existing tags where they fit; add new ones sparingly.
 tags:
-  - carbon-black
-  - edr
-  - triage
-  - data-processing
-  - reporting
+  - elastic
+  - kibana
+  - api
+  - http
+  - template
   - powershell
 
 # --- Optional metadata -----------------------------------------------------
@@ -94,6 +89,11 @@ tags:
 # created: <YYYY-MM-DD>
 # updated: <YYYY-MM-DD>
 # related:
-#   - <other-script-name>     # e.g. companion or downstream tool
-# notes: >
-#   <Caveats, known limitations, planned improvements, links to issues, etc.>
+#   - <other-script-name>
+notes: >
+  WIP starter template. Credentials are inline plaintext — do not commit
+  edited copies; switch to Get-Credential, an environment variable, or a
+  secret store before broader use. The HTTP method is hardcoded to POST,
+  and the default match_all body is Elasticsearch query DSL rather than a
+  generic Kibana request shape; both should be adjusted for the specific
+  endpoint being called.

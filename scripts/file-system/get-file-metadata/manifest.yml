@@ -6,22 +6,24 @@
 # --- Identity --------------------------------------------------------------
 
 # Short identifier — must match the script folder name (kebab-case).
-name: export-processes-by-host
+name: get-file-metadata
 
 # Human-readable title for catalog display.
-display_name: Export Processes by Host
+display_name: Get All File Metadata
 
 # One- to three-sentence description. Pulled into CATALOG.md.
 summary: >
-  Orchestrates a full Carbon Black data collection workflow. Retrieves
-  process data from the Carbon Black API for a given hostname and time
-  range, converts the raw JSON to structured CSV, and produces an Excel
-  (XLSX) report for analyst review.
+  Collects comprehensive file metadata for forensic triage and investigative
+  review. Returns a structured PowerShell object containing filesystem info,
+  NTFS alternate data streams, owner and ACL, MD5/SHA1/SHA256 hashes,
+  Authenticode signature data, Windows Shell properties, Office Open XML
+  metadata, embedded OLE objects, and best-effort PDF metadata. Pipeline-
+  friendly with Get-ChildItem.
 
 # --- Classification --------------------------------------------------------
 
 # Top-level folder under scripts/.
-category: carbon-black
+category: file-system
 
 language: PowerShell
 
@@ -34,15 +36,13 @@ status: Production
 
 # The script you invoke directly. For dot-sourced function files, name the
 # file even though it is not "run" in the conventional sense.
-entry_point: Run-FullCBWorkflow.ps1
+entry_point: Get-AllFileMetadata.ps1
 
 # Optional — list supporting scripts and what each one does. Omit for
 # single-file scripts.
-components:
-  - name: ConvertJSON-ToCSV.ps1
-    description: Parses Carbon Black JSON event/process data and converts it into structured CSV format for analysis.
-  - name: Convert-ToXlsx.ps1
-    description: Converts CSV output into Excel (XLSX) format for analyst consumption and reporting.
+# components:
+#   - name: <Helper-One.ps1>
+#     description: <What this supporting script does.>
 
 # Optional — non-script support files (config, lookup tables, etc.).
 # support_files:
@@ -53,39 +53,40 @@ components:
 
 requirements:
   os: Windows
-  powershell: ">=7.0"
+  powershell: ">=5.1"
   software:
-    - Microsoft Excel  # required for XLSX output
-  network:
-    - Carbon Black API endpoint
-  credentials:
-    - Carbon Black API key
+    - Microsoft Word  # optional; only needed for legacy .doc OLE-object inspection
+  filesystem:
+    - NTFS volume  # required for alternate data stream collection
+  permissions:
+    - Read access to target files and their ACLs
 
 # --- Data flow -------------------------------------------------------------
 
 # Inputs the script consumes (parameters, files, API responses).
 inputs:
-  - carbon black api key
-  - hostname to investigate
-  - date/time for first process to export
-  - date/time for last process to export
+  - -Path  # file path; accepts pipeline value, including FullName from Get-ChildItem
 
 # Outputs the script produces (files, console output, return objects).
 outputs:
-  - CSV
-  - XLSX
-  - JSON
+  - PSCustomObject on the pipeline with FileSystemInfo, Streams, Owner, ACL, Hashes, Authenticode, ShellProperties, OfficeProperties, EmbeddedObjects, PdfMetadata
+  - JSON when piped to ConvertTo-Json | Out-File
+  - CSV when projected with Select-Object | Export-Csv
 
 # --- Cross-reference -------------------------------------------------------
 
 # Free-form tags used by CAPABILITY_MATRIX.md. Prefer kebab-case. Reuse
 # existing tags where they fit; add new ones sparingly.
 tags:
-  - carbon-black
-  - edr
+  - file-system
+  - forensics
   - triage
-  - data-processing
-  - reporting
+  - metadata
+  - hashing
+  - ntfs
+  - authenticode
+  - office
+  - pdf
   - powershell
 
 # --- Optional metadata -----------------------------------------------------
@@ -94,6 +95,10 @@ tags:
 # created: <YYYY-MM-DD>
 # updated: <YYYY-MM-DD>
 # related:
-#   - <other-script-name>     # e.g. companion or downstream tool
-# notes: >
-#   <Caveats, known limitations, planned improvements, links to issues, etc.>
+#   - hunt-for-alternate-datastreams  # narrower ADS-only helper
+notes: >
+  The function is dot-sourced (`. .\Get-AllFileMetadata.ps1`) before calling
+  `Get-AllFileMetadata`. Behavior is best-effort: malformed, locked, or
+  unsupported files produce empty sub-sections rather than errors. Office
+  and PDF sections only populate for those file types; other files will
+  show those keys as empty by design.

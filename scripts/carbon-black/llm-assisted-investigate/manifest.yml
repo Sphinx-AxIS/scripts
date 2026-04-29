@@ -1,0 +1,118 @@
+# Manifest for a single script folder under scripts/<category>/<script-name>/
+# Copy this file as manifest.yml inside the script folder and fill it in.
+# Required fields are uncommented. Optional fields are commented out — uncomment
+# any that apply.
+
+# --- Identity --------------------------------------------------------------
+
+# Short identifier — must match the script folder name.
+name: llm-assisted-investigate
+
+# Human-readable title for catalog display.
+display_name: LLM-Assisted Carbon Black Investigation
+
+# One- to three-sentence description. Pulled into CATALOG.md.
+summary: >
+  Automates the initial investigation of a Carbon Black watchlist alert.
+  Accepts a Carbon Black UI search or analyze URL, converts it to an API
+  query, fetches the resulting process tree(s) and event data, validates
+  observed software against the SPOC C approval API, and emits a structured
+  LLM prompt for downstream analysis.
+
+# --- Classification --------------------------------------------------------
+
+# Top-level folder under scripts/.
+category: carbon-black
+
+language: PowerShell
+
+# Production = stable, in active use.
+# Beta       = functional but rough edges; review before production use.
+# WIP        = under development; expect breakage.
+status: WIP
+
+# --- Files in this folder --------------------------------------------------
+
+# The script you invoke directly. For dot-sourced function files, name the
+# file even though it is not "run" in the conventional sense.
+entry_point: Start-CBInvestigation.ps1
+
+# Optional — list supporting scripts and what each one does. Omit for
+# single-file scripts.
+components:
+  - name: Get-CBProcessTree.ps1
+    description: Defines Get-CBProcessTreeData, which gathers metadata, child processes, and event data for a process and its full subtree from the Carbon Black v1 and v4 APIs.
+  - name: SoftwareValidation.ps1
+    description: Defines Test-ApprovedSoftware, which queries the SPOC C software approval API to check whether a product (and optional version) is approved.
+
+# Optional — non-script support files (config, lookup tables, etc.).
+support_files:
+  - name: whitelist.txt
+    description: Internal whitelist; one entry per line. Lines beginning with '#' are treated as comments.
+  - name: process_map.csv
+    description: Maps observed process names to official product names for software-approval lookups. Required at runtime but not committed to the repo.
+  - name: SWAP_APIKEY.txt
+    description: API key swap helper file (see SWAP_APIKEY_README.txt for usage).
+  - name: SWAP_APIKEY_README.txt
+    description: Notes on rotating the API keys used by the toolkit.
+
+# --- Runtime profile -------------------------------------------------------
+
+requirements:
+  os: Windows
+  powershell: ">=5.1"
+  network:
+    - Carbon Black API endpoint (server URL is currently hardcoded inside Get-CBProcessTree.ps1)
+    - SPOC C software approval API endpoint
+  credentials:
+    - Carbon Black API key (loaded from an NTFS alternate data stream at H:\Scripts\powershell\CB_API\cred.txt:APIKeyStream)
+    - SPOC C API key (loaded from H:\Scripts\powershell\CB_API\SPOCC_API.txt:APIKeyStream)
+  filesystem:
+    - NTFS volume at the credential paths above (alternate data streams hold the keys)
+  permissions:
+    - Read access to the credential ADS streams
+
+# --- Data flow -------------------------------------------------------------
+
+# Inputs the script consumes (parameters, files, API responses).
+inputs:
+  - -WatchlistUrl  # Carbon Black UI search or analyze URL; prompted if not supplied
+  - -AlertName    # alert/watchlist name for prompt context; prompted if not supplied
+  - whitelist.txt and process_map.csv loaded from the script's working directory
+  - Carbon Black process and event data via API
+  - SPOC C software approval lookups via API
+
+# Outputs the script produces (files, console output, return objects).
+outputs:
+  - Structured LLM prompt text for downstream analysis
+  - Console status and progress messages
+
+# --- Cross-reference -------------------------------------------------------
+
+# Free-form tags used by CAPABILITY_MATRIX.md. Prefer kebab-case. Reuse
+# existing tags where they fit; add new ones sparingly.
+tags:
+  - carbon-black
+  - edr
+  - triage
+  - alert-investigation
+  - process-tree
+  - software-validation
+  - llm
+  - powershell
+
+# --- Optional metadata -----------------------------------------------------
+
+# maintainer: <name or GitHub handle>
+# created: <YYYY-MM-DD>
+# updated: <YYYY-MM-DD>
+related:
+  - export-processes-by-host  # complementary CB extraction workflow without LLM step
+notes: >
+  WIP. The Carbon Black server URL and credential file paths are hardcoded
+  inside Get-CBProcessTree.ps1 and SoftwareValidation.ps1, and process_map.csv
+  is referenced at runtime but is not committed. Before this script is usable
+  outside its original environment those paths need to be parameterized and a
+  sample process_map.csv (or a generator) needs to ship with the folder. There
+  is no per-folder README yet — the SYNOPSIS/DESCRIPTION blocks at the top of
+  Start-CBInvestigation.ps1 are currently the only documentation.

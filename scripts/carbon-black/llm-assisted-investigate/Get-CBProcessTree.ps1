@@ -3,10 +3,10 @@
 # Contains the primary function Get-CBProcessTreeData, which gathers all data
 # for a process and all of its children, returning it as a single object.
 
-# --- Configuration (remains at the top) ---
-$CBServer = "ndwuscyblvcbm01.gold.rtgold.nima.mil:8443"
-# NOTE: Using the Get-Content call from your provided script.
-$CBAPIKey = Get-Content "H:\Scripts\powershell\CB_API\cred.txt:APIKeyStream"
+# --- Configuration (EDIT these for your environment before running) ---
+$CBServer        = "<your-cb-server>:<port>"                  # e.g. "cb.example.com:8443"
+$CBAPIKey        = Get-Content "<path-to-cb-api-key-file>"    # supports NTFS ADS, e.g. ".\cred.txt:APIKeyStream"
+$EventOutputRoot = "<path-to-event-output-directory>"         # where per-process event JSON gets written
 $APIURLv1 = "https://$CBServer/api/v1" # For Process Metadata (like children)
 $APIURLv4 = "https://$CBServer/api/v4" # For Process Events
 
@@ -47,7 +47,7 @@ function Get-CBProcessTreeData {
             Write-Verbose "Getting Process Events for PID: $ProcessID"
             $processEventData = Invoke-RestMethod -Uri $eventUrl -Headers $headers -Method Get -ErrorAction Stop
             if ($null -ne $processEventData) {
-                $outputDir = "H:\Cb_query_results\json_proc_docs"; if (!(Test-Path -Path $outputDir -PathType Container)) { New-Item -ItemType Directory -Path $outputDir }; $outputFile = Join-Path $outputDir "$($ProcessID)_$($ProcessSegmentID)_events.json"; $processEventData | ConvertTo-Json -Depth 10 | Out-File $outputFile; Write-Host "Process events saved to: $outputFile" -ForegroundColor DarkGray
+                $outputDir = $EventOutputRoot; if (!(Test-Path -Path $outputDir -PathType Container)) { New-Item -ItemType Directory -Path $outputDir }; $outputFile = Join-Path $outputDir "$($ProcessID)_$($ProcessSegmentID)_events.json"; $processEventData | ConvertTo-Json -Depth 10 | Out-File $outputFile; Write-Host "Process events saved to: $outputFile" -ForegroundColor DarkGray
 				try {
 					$currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 					$acl = Get-Acl $outputFile

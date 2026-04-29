@@ -1,11 +1,11 @@
 ﻿# File: SoftwareValidation.ps1
 # Contains the function to check if software is approved by querying the SPOC C API.
 
-# --- Default API Key Loading ---
-# The script attempts to load the key from your specified file path.
+# --- Default API Key Loading (EDIT path for your environment before running) ---
+# The script attempts to load the key from the specified file path.
 # The $script: scope ensures the variable is available to functions inside this script.
 try {
-    $script:DefaultApiKey = Get-Content "H:\Scripts\powershell\CB_API\SPOCC_API.txt:APIKeyStream"
+    $script:DefaultApiKey = Get-Content "<path-to-software-validation-api-key-file>"
 }
 catch {
     # If the file can't be read, we set the variable to null and will handle the error later.
@@ -45,8 +45,8 @@ function Test-ApprovedSoftware {
         return $false
     }
 
-    # --- API Query Construction ---
-    $apiUrl = "https://spoccapi.nga.mil/api/v1/public/product"
+    # --- API Query Construction (EDIT this URL for your environment) ---
+    $apiUrl = "<software-validation-api-url>"   # e.g. "https://your-validation-api.example.com/api/v1/public/product"
     $queryParams = @{ "product_name" = $ProductName }
     if ($PSBoundParameters.ContainsKey('VersionLabel')) {
         $queryParams['version_label'] = $VersionLabel

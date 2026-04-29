@@ -123,6 +123,10 @@ foreach ($process in $processIdentifiers) {
     $JSONFormattedProcessSummary = $initialProcessSummary | ConvertTo-Json -Depth 10
     $JSONFormattedProcessTreeEvents = $processTreeEvents | ConvertTo-Json -Depth 10
     
+    # NOTE: Replace the <your-internal-cidr-N> placeholders in the prompt
+    # template's "Internal IP Address Ranges" section below with your
+    # organization's internal CIDR ranges (e.g. 10.0.0.0/8, 192.168.0.0/16).
+    # Add or remove rows as needed.
     # The PromptTemplate here-string starts on the next line
     $PromptTemplate = @"
 You are a **Tier 2 Security Operations Center (SOC) Analyst** investigating a **Carbon Black EDR Watchlist Alert**.
@@ -137,8 +141,8 @@ You must produce a **structured investigation report** that can be pasted into a
 ### Internal IP Address Ranges
 Treat the following IP ranges as **internal**, unless there are other indicators suggesting compromise (beaconing patterns, known bad ports, suspicious processes, strange timing, lateral movement indicators, etc.):
 
-- `214.28.0.0/16`
-- `164.214.0.0/16`
+- `<your-internal-cidr-1>`
+- `<your-internal-cidr-2>`
 
 ### Process Approval Context
 Carbon Black approval statuses may indicate prior review, but **approval does NOT automatically mean benign**.
