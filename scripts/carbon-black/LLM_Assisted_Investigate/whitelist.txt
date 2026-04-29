@@ -1,0 +1,21 @@
+# This file contains a list of trusted, built-in Windows processes
+# that do not need to be checked against the Approved Software API.
+# Add one process name per line (without the extension).
+svchost
+cmd
+lsass
+csrss
+wininit
+smss
+services
+conhost
+taskhostw
+powershell_ise
+pwsh
+powershell
+setenforce
+systemctl
+semanage
+chmod
+msedge
+identity_helper

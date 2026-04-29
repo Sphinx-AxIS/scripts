@@ -1,0 +1,39 @@
+automation-library/
+  README.md
+  CATALOG.md
+  CAPABILITY_MATRIX.md
+
+  scripts/
+    carbon-black/
+      export-processes-by-host/
+        README.md
+        manifest.yml
+        Run-FullCBWorkflow.ps1
+        ConvertJSON-ToCSV.ps1
+        Convert-ToXlsx.ps1
+
+    elastic/
+      ad-enumeration-detection/
+        README.md
+        manifest.yml
+        Detect-ADEumeration.ps1
+
+    file-system/
+      get-file-metadata/
+        Get-AllFileMetadata.ps1
+		README.md
+      search-file-for-keywords/
+        Search-Keywords.ps1
+		README.md
+
+    forensics/
+      convert-epoch-time/
+        README.md
+        manifest.yml
+        ConvertEpoch-toHuman.ps1
+      hunt-for-alternate-datastreams/
+        Get-AlternateDataStreams.ps1
+
+  templates/
+    README-template.md
+    manifest-template.yml
